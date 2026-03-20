@@ -1,5 +1,7 @@
 # rocBLAS
 
+[English](README.md) | [???](README.ja.md)
+
 > [!IMPORTANT]
 > This repository is an experimental lab fork: `AETS-MAGI/rocBLAS-gfx900_aets-lab`.
 >
@@ -26,3 +28,8 @@ ROCm installation and required platform dependencies, refer to the
 
 > [!NOTE]
 > The published rocBLAS documentation is available at [rocBLAS](https://rocm.docs.amd.com/projects/rocBLAS/en/latest/index.html) in an organized, easy-to-read format, with search and a table of contents. The documentation source files reside in the rocBLAS/docs folder of this repository. As with all ROCm projects, the documentation is open source. For more information, see [Contribute to ROCm documentation](https://rocm.docs.amd.com/en/latest/contribute/contributing.html).
+
+## Related repositories
+
+- Setup and validation workspace: https://github.com/AETS-MAGI/ROCm-MI25-build
+- Paired Tensile fork: https://github.com/AETS-MAGI/Tensile-gfx900_aets-lab
