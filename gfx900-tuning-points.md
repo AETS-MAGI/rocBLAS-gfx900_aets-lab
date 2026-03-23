@@ -144,3 +144,50 @@ ROCBLAS_LAYER visibility sweep update:
 - Conclusion:
   - Layer tuning itself is no longer the blocker.
   - Next blocker is getting a workload path that emits rocBLAS GEMM-level logs.
+
+Workload-path breakthrough update:
+
+- Ran higher-density workload sweep (`qwen2.5:7b` / `deepseek-r1:14b`,
+  `NUM_PREDICT=512`, `prompt_profile=long|math|code`):
+  - `g4_workload_path_sweep_20260324_023631.txt`
+  - `direct_hits=0`
+- Then ran `gpt-oss:latest` single-case probe:
+  - `g4_link_summary_gpt-oss_latest_20260324_024249.txt`
+  - `direct_rocblas_or_tensile_dispatch=1`
+  - `rocblas_trace_gemm_lines=1002`
+  - `kernel_tensile_like_rows=167`
+- This is the first confirmed same-scenario direct link between:
+  1) fallback asset access and
+  2) rocBLAS/Tensile dispatch evidence.
+
+New shape-level extraction:
+
+- Added `ROCm-MI25-build/summarize-rocblas-gemm-shapes.sh`.
+- On `gpt-oss` trace (`g4_rocblas_trace_gpt-oss_latest_20260324_024249.log`):
+  - `gemm_api_lines=501`
+  - `internal_tensile_lines=501`
+  - dominant shapes include:
+    - `512x512x2880` (`rocblas_gemm_ex` + `rocblas_gemm_tensile_backend`)
+    - `4096x512x64` / `64x512x4096` (`rocblas_gemm_batched_ex`)
+    - `2880x512x4096`, `4096x512x2880` (`rocblas_gemm_ex`)
+
+Updated immediate focus:
+
+- Keep `ROCBLAS_LAYER=9` as observability default.
+- Use `gpt-oss:latest` as the direct-dispatch anchor workload.
+- Prioritize tuning/investigation around the extracted high-frequency shapes
+  before broad source-level edits.
+
+Formal reflection (fact / interpretation / implication):
+
+1. Fact
+   - Under `gpt-oss:latest`, both `rocblas_gemm_ex` and
+     `rocblas_gemm_tensile_backend` were observed repeatedly.
+   - `direct_rocblas_or_tensile_dispatch=1` is confirmed.
+2. Interpretation
+   - Direct dispatch names were absent for tinyllama/qwen in earlier runs but
+     appeared with a different workload.
+   - So the main blocker was likely workload/path conditions, not `ROCBLAS_LAYER`.
+3. Implication
+   - We now have a stable probe condition that exposes direct rocBLAS/Tensile dispatch.
+   - Use this as the baseline to compare model/precision/path deltas.
