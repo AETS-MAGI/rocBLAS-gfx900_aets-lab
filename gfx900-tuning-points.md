@@ -108,3 +108,12 @@ Interpretation:
 - We can now confirm rocBLAS trace activation path.
 - Dispatch-level GEMM evidence is still missing from current trace output.
 - Next step is trace-granularity escalation before changing rocBLAS kernels.
+
+Update from rocprofv3 kernel trace:
+
+- A separate `rocprofv3` probe now confirms dispatch-level kernel traces are collectible
+  (`kernel_dispatch_rows=3605` on tinyllama short run).
+- However, observed dispatch names are still ggml-hip-side kernels (`mul_mat_q`, etc.),
+  not explicit rocBLAS/Tensile-named kernels.
+- Therefore, for rocBLAS tuning decisions, we still need one run linking:
+  fallback asset access + rocBLAS/Tensile dispatch evidence.
