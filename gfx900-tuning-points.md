@@ -117,3 +117,13 @@ Update from rocprofv3 kernel trace:
   not explicit rocBLAS/Tensile-named kernels.
 - Therefore, for rocBLAS tuning decisions, we still need one run linking:
   fallback asset access + rocBLAS/Tensile dispatch evidence.
+
+Integrated link status update:
+
+- `g4-fallback-dispatch-link-check.sh` now orchestrates both probes under the same condition.
+- Latest tinyllama result:
+  - `fallback_confirmed=1`
+  - `dispatch_confirmed=1`
+  - `direct_rocblas_or_tensile_dispatch=0`
+  - `link_status=indirect_link_only_same_scenario`
+- This closes the "separate-run evidence" gap, but direct rocBLAS/Tensile dispatch naming is still open.
