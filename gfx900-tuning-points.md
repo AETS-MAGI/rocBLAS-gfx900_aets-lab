@@ -353,3 +353,32 @@ Implication:
 - In this tested profile set, prompt style/length did not move the baseline512
   rocBLAS shape-frequency observation.
 - The next single-knob target should be extended `num_predict` ranges.
+
+## 11. Single-knob sweep result: extended `num_predict` under baseline512
+
+Run setup:
+
+- baseline fixed: `MODEL=gpt-oss:latest`, `NUM_CTX=8192`,
+  `NUM_BATCH=512`, `KEEP_ALIVE=5m`
+- `NUM_PREDICT={64,128,256,512,1024}`
+- compare note:
+  - `g4_baseline512_numpredict_sweep_compare_20260324_043625.txt`
+
+Observed:
+
+- `direct_rocblas_or_tensile_dispatch=1` for all 5 cases
+- `rocblas_trace_gemm_lines=1002` for all 5 cases
+- top-3 shape hits unchanged for all 5 cases:
+  - `512x512x2880=192`
+  - `2880x512x4096=96`
+  - `4096x512x2880=96`
+- generation-side evidence still scales:
+  - `eval_count` tracks requested length (`64/128/256/512`)
+  - `1024` case ended at `eval_count=797` with `done_reason=stop`
+
+Implication:
+
+- Under baseline512, extending decode length did not change the observed rocBLAS
+  GEMM signature in current trace mode.
+- This suggests the currently observed signature is likely prefill-dominant.
+- Next step should split prefill vs decode observation windows.
