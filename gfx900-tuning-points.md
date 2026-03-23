@@ -249,3 +249,36 @@ Additional batch comparison (`num_batch=512,1024`):
   - `4096x1024x2880`
 - implication:
   - shape-target lists should be conditioned on runtime batch context.
+
+## 7. Canonical anchor freeze (baseline vs side)
+
+Canonical profile reference:
+
+- `ROCm-MI25-build/ROCm-MI25-tips/G4_gptoss_anchor_profile.md`
+
+Baseline lane (default for tuning comparisons):
+
+- `MODEL=gpt-oss:latest`
+- `ROCBLAS_LAYER=9`
+- `NUM_CTX=8192`
+- `NUM_BATCH=512`
+- `NUM_PREDICT={64,128,256}`
+- summary: `g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260324_034636.txt`
+- stable outcomes across all 3 predict values:
+  - `direct_hits=3/3`
+  - `rocblas_trace_gemm_lines=1002`
+  - dominant `*x512x*` shapes remain unchanged
+
+Side lane (shape-shift sensitivity):
+
+- `NUM_BATCH=1024` with 1024-target shapes
+- summary: `g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260324_035250.txt`
+- stable outcomes across all 3 predict values:
+  - `direct_hits=3/3`
+  - `rocblas_trace_gemm_lines=1336`
+  - dominant shapes move to `*x1024x*`
+
+Operational rule:
+
+- Use baseline lane for primary before/after tuning judgments.
+- Use side lane to validate whether changes are robust under batch-driven shape migration.
