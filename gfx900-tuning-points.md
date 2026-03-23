@@ -191,3 +191,49 @@ Formal reflection (fact / interpretation / implication):
 3. Implication
    - We now have a stable probe condition that exposes direct rocBLAS/Tensile dispatch.
    - Use this as the baseline to compare model/precision/path deltas.
+
+## 6. Anchor-shape sweep entrypoint (2026-03-24)
+
+Runtime-side probe scripts in `ROCm-MI25-build` were extended so we can sweep
+runtime knobs without changing low-level code:
+
+- `NUM_CTX`
+- `NUM_BATCH`
+- `NUM_THREAD`
+- `KEEP_ALIVE`
+
+New orchestrator:
+
+- `ROCm-MI25-build/g4-gptoss-anchor-shape-sweep.sh`
+
+What it adds:
+
+- fixed anchor defaults: `MODEL=gpt-oss:latest`, `ROCBLAS_LAYER=9`
+- case matrix execution via `g4-fallback-dispatch-link-check.sh`
+- per-case shape counters for first-priority targets:
+  - `512x512x2880`
+  - `4096x512x64`
+  - `64x512x4096`
+  - `2880x512x4096`
+  - `4096x512x2880`
+
+Why this matters for rocBLAS-side tuning:
+
+- We can now compare whether runtime knobs change direct dispatch visibility and
+  shape frequency before touching kernels.
+- This keeps the current phase evidence-first and avoids conflating runtime-path
+  changes with low-level source edits.
+
+Validation snapshot (main-node, 2026-03-24):
+
+- run:
+  - `MODEL=gpt-oss:latest NUM_PREDICT_LIST=128 NUM_CTX_LIST=8192 NUM_BATCH_LIST=512 KEEP_ALIVE_LIST=5m RUNS_PER_CASE=1 ./g4-gptoss-anchor-shape-sweep.sh`
+- summary:
+  - `ROCm-MI25-build/vega_path_check_logs/g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260324_033556.txt`
+- key metrics:
+  - `direct_hits=1`
+  - `rocblas_trace_gemm_lines=1002`
+  - target hits:
+    - `512x512x2880=192`
+    - `2880x512x4096=96`
+    - `4096x512x2880=96`
