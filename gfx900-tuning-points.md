@@ -82,3 +82,29 @@ scripts/phase3_bench.sh keepalive-sweep --repeat 10 --preset gfx900_safe --keep-
 
 - Stay in evidence-first mode.
 - Prioritize runtime path fixing and type-level observations before low-level code changes.
+
+## 5. New instrumentation (2026-03-24)
+
+Added on the canonical main-node workflow side (`ROCm-MI25-build`):
+
+- `g4-fallback-strace-check.sh`
+  - now supports `STRACE_TIMESTAMP=1` (default) for `strace -tt`
+  - now supports `PROBE_ROCBLAS_LOG=1` to capture rocBLAS trace files
+- `summarize-fallback-phases.sh`
+  - summarizes fallback `.dat` / `.hsaco` timing spans per pid log
+
+Latest probe snapshot:
+
+- summary: `g4_summary_tinyllama_latest_20260324_014707.txt`
+- `rocblas_trace_lines=1`
+- `rocblas_trace_handle_lines=1`
+- `rocblas_trace_gemm_lines=0`
+- same result under `ROCBLAS_LAYER=63`:
+  - `g4_summary_tinyllama_latest_20260324_015056.txt`
+  - `rocblas_trace_gemm_lines=0`
+
+Interpretation:
+
+- We can now confirm rocBLAS trace activation path.
+- Dispatch-level GEMM evidence is still missing from current trace output.
+- Next step is trace-granularity escalation before changing rocBLAS kernels.
