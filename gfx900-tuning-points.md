@@ -126,4 +126,9 @@ Integrated link status update:
   - `dispatch_confirmed=1`
   - `direct_rocblas_or_tensile_dispatch=0`
   - `link_status=indirect_link_only_same_scenario`
-- This closes the "separate-run evidence" gap, but direct rocBLAS/Tensile dispatch naming is still open.
+- Latest qwen2.5:7b result:
+  - `fallback_confirmed=1`
+  - `dispatch_confirmed=1`
+  - `direct_rocblas_or_tensile_dispatch=0`
+  - `link_status=indirect_link_only_same_scenario`
+- This closes the "separate-run evidence" gap on two models, but direct rocBLAS/Tensile dispatch naming is still open.
