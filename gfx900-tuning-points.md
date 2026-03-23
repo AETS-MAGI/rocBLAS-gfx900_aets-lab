@@ -132,3 +132,15 @@ Integrated link status update:
   - `direct_rocblas_or_tensile_dispatch=0`
   - `link_status=indirect_link_only_same_scenario`
 - This closes the "separate-run evidence" gap on two models, but direct rocBLAS/Tensile dispatch naming is still open.
+
+ROCBLAS_LAYER visibility sweep update:
+
+- Added `ROCm-MI25-build/g4-rocblas-layer-sweep.sh` and ran `1,8,9,15,63`
+  on `tinyllama` and `qwen2.5:7b`.
+- Common result:
+  - layer `8` only: no trace lines
+  - layer `1/9/15/63`: only `rocblas_create_handle` (no GEMM/internal backend lines)
+- Operational default is now fixed to `ROCBLAS_LAYER=9` (trace + internal).
+- Conclusion:
+  - Layer tuning itself is no longer the blocker.
+  - Next blocker is getting a workload path that emits rocBLAS GEMM-level logs.
