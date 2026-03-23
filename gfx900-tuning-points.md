@@ -237,3 +237,15 @@ Validation snapshot (main-node, 2026-03-24):
     - `512x512x2880=192`
     - `2880x512x4096=96`
     - `4096x512x2880=96`
+
+Additional batch comparison (`num_batch=512,1024`):
+
+- summary:
+  - `ROCm-MI25-build/vega_path_check_logs/g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260324_033756.txt`
+- both cases kept `direct_rocblas_or_tensile_dispatch=1`
+- with `num_batch=1024`, dominant shapes shifted to:
+  - `512x1024x2880`
+  - `2880x1024x4096`
+  - `4096x1024x2880`
+- implication:
+  - shape-target lists should be conditioned on runtime batch context.
