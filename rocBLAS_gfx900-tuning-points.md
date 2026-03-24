@@ -933,3 +933,61 @@ Role:
 
 - navigation and prioritization only
 - no new low-level claim beyond existing evidence
+
+## 27. Decode-signature reproducibility check (2026-03-25 03:31-03:33 JST)
+
+Scope:
+
+- observation-only rerun (no source/kernel edit)
+- fixed anchor: `MODEL=gpt-oss:latest`, `ROCBLAS_LAYER=9`
+- lane comparison:
+  - baseline: `NUM_BATCH=512`
+  - side: `NUM_BATCH=1024`
+
+Executed:
+
+- phase-window sweep (num_predict `64,128,256,512,1024`)
+  - baseline:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260325_031811.txt`
+  - side:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260325_032242.txt`
+- prefill/full split (`prefill_num_predict=1`, `full_num_predict=128`)
+  - baseline:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_prefill_decode_split_gpt-oss_latest_20260325_032955.txt`
+  - side:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_prefill_decode_split_gpt-oss_latest_20260325_033100.txt`
+
+Observed [main-node confirmed]:
+
+- phase-window sweep:
+  - baseline: `ok_cases=5`, `decode_signature_cases=5`, `prefill_dominant_cases=0`
+  - side: `ok_cases=5`, `decode_signature_cases=5`, `prefill_dominant_cases=0`
+  - all rows (both lanes): `direct_rocblas_or_tensile_dispatch=1`,
+    `fallback_confirmed=1`, `dispatch_confirmed=1`,
+    `decode_kernel_tensile_like_rows=167`, `prefill_kernel_tensile_like_rows=0`
+- prefill/full split:
+  - both lanes: `phase_split_status=prefill_dominant_signature`
+  - both lanes: `decode_delta_gemm_lines=0`
+  - both lanes: `decode_delta_target_shape_hits=0`
+  - side lane split target hits remain 0 for baseline-target shape set
+    (`512x512x2880`, `2880x512x4096`, `4096x512x2880`)
+
+- side lane target-shape correction rerun:
+  - summary:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_prefill_decode_split_gpt-oss_latest_20260325_033458.txt`
+  - corrected target set:
+    - `512x1024x2880`, `2880x1024x4096`, `4096x1024x2880`
+  - observed hits:
+    - `shape_512_1024_2880=288`
+    - `shape_2880_1024_4096=144`
+    - `shape_4096_1024_2880=144`
+  - `phase_split_status` stays `prefill_dominant_signature`
+
+Interpretation [inference]:
+
+- For the current anchor, decode-side signature is reproducible in the
+  stream phase-window lane (`5/5` in both baseline and side).
+- The prefill/full proxy split and stream-window split should still be treated
+  as separate evidence layers; they are not interchangeable gates.
+- For side-lane split comparisons, target-shape set should be lane-aware
+  (`*x1024x*` family) when shape-hit deltas are evaluated.
