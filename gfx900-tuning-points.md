@@ -382,3 +382,131 @@ Implication:
   GEMM signature in current trace mode.
 - This suggests the currently observed signature is likely prefill-dominant.
 - Next step should split prefill vs decode observation windows.
+
+## 12. Stream phase-window sweep (`num_predict=64..1024`) under baseline512
+
+Run setup (main-node, 2026-03-24):
+
+- command:
+  - `NUM_PREDICT_LIST=64,128,256,512,1024 ./g4-stream-phase-window-sweep.sh`
+- summary:
+  - `ROCm-MI25-build/vega_path_check_logs/g4_stream_phase_window_sweep_gpt-oss_latest_20260324_105527.txt`
+- table:
+  - `ROCm-MI25-build/vega_path_check_logs/g4_stream_phase_window_sweep_gpt-oss_latest_20260324_105527.tsv`
+
+Observed:
+
+- all 5 cases succeeded (`ok_cases=5`, `failed_cases=0`)
+- all 5 cases preserved gate signals:
+  - `direct_rocblas_or_tensile_dispatch=1`
+  - `fallback_confirmed=1`
+  - `dispatch_confirmed=1`
+- all 5 cases showed:
+  - `phase_split_status_proxy=decode_signature_detected`
+  - `prefill_kernel_tensile_like_rows=0`
+  - `decode_kernel_tensile_like_rows=167`
+  - `stream_first_token_channel=thinking`
+
+Formal reflection (fact / interpretation / implication):
+
+1. Fact
+   - Under baseline512 + gpt-oss anchor, stream-window probes stayed
+     `decode_signature_detected` across `num_predict=64..1024`.
+   - Direct rocBLAS/Tensile dispatch evidence remained present in every case.
+2. Interpretation
+   - Increasing decode length changes total runtime but does not destabilize the
+     dispatch-observable anchor condition.
+   - The "first token via thinking channel" behavior is stable for this model path.
+3. Implication
+   - We can treat this stream-window sweep profile as a robust observability lane
+     for further rocBLAS/Tensile shape-level comparisons.
+   - Remaining caution: current split is still proxy-based, not strict token-level attribution.
+
+## 13. Baseline512 vs side1024 in stream phase-window lane
+
+Comparison inputs (main-node, 2026-03-24):
+
+- baseline tsv:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260324_105527.tsv`
+- side1024 tsv:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260324_122317.tsv`
+- derived compare table:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_batch_compare_gpt-oss_latest_20260324_123206.tsv`
+
+Observed:
+
+- both lanes kept, for all `num_predict={64,128,256,512,1024}`:
+  - `direct_rocblas_or_tensile_dispatch=1`
+  - `fallback_confirmed=1`
+  - `dispatch_confirmed=1`
+  - `phase_split_status_proxy=decode_signature_detected`
+  - `decode_kernel_tensile_like_rows=167`
+- side1024 increased total stream wall time in every case
+  while preserving the same observability signature.
+
+Formal reflection (fact / interpretation / implication):
+
+1. Fact
+   - Raising `num_batch` from 512 to 1024 did not change dispatch gate outcomes
+     or phase-window proxy class in this lane.
+   - It consistently increased total wall-time.
+2. Interpretation
+   - In the current setup, batch acts primarily as a runtime-cost scaler,
+     not as a selector for a different stream-visible dispatch signature.
+3. Implication
+   - Keep baseline512 as the canonical tuning judgment lane.
+   - Keep side1024 as a sensitivity lane for runtime scaling and robustness checks.
+
+## 14. Stream observability sensitivity: `keep_alive` threshold
+
+Runs (main-node, baseline512, `num_predict=128`):
+
+- sweep A (`0s,5m,30m`):
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_keepalive_sweep_gpt-oss_latest_20260324_123600.tsv`
+- 0s recheck (2 runs):
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_keepalive_0s_recheck_20260324_123825.tsv`
+- sweep B (`1s,10s,30s,5m`):
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_keepalive_sweep_gpt-oss_latest_20260324_123938.tsv`
+
+Observed:
+
+- `keep_alive=0s` and `1s` repeatedly showed:
+  - `dispatch_confirmed=0`
+  - `phase_split_status_proxy=unavailable`
+  - rocprof summary with `trace_file_count=0`, `csv_file_count=0`
+- `keep_alive=10s/30s/5m` consistently showed:
+  - `dispatch_confirmed=1`
+  - `phase_split_status_proxy=decode_signature_detected`
+  - `decode_kernel_tensile_like_rows=167`
+
+Formal reflection (fact / interpretation / implication):
+
+1. Fact
+   - Very short keep-alive values (`0s`, `1s`) caused reproducible loss of
+     rocprof dispatch evidence in this stream observability lane.
+2. Interpretation
+   - This is an observability-window issue, not a direct fallback/path failure:
+     direct/fallback gates can still be positive while rocprof phase split becomes unavailable.
+3. Implication
+   - For stable rocBLAS/Tensile stream-phase evidence collection, set
+     `keep_alive>=10s` as an operational minimum.
+
+## 15. Cross-batch confirmation of `keep_alive>=10s`
+
+Additional check (main-node, `num_predict=128`):
+
+- side1024 (`num_batch=1024`) keep-alive sweep:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_keepalive_sweep_gpt-oss_latest_20260324_124412.tsv`
+- baseline/side combined table:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_keepalive_batch_compare_gpt-oss_latest_20260324_124713.tsv`
+
+Observed:
+
+- same threshold pattern across both lanes:
+  - `keep_alive=1s` -> `dispatch_confirmed=0`, `phase_split_status_proxy=unavailable`
+  - `keep_alive>=10s` -> `dispatch_confirmed=1`, `decode_signature_detected`
+
+Implication:
+
+- The minimum keep-alive requirement is not specific to baseline512.
+- Apply `keep_alive>=10s` uniformly when collecting stream-phase rocBLAS evidence.
