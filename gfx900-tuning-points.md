@@ -550,3 +550,50 @@ Key result from this aggregate:
 - stream compare rows: all 5 rows kept
   - `direct/fallback/dispatch = 1`
   - `decode_signature_detected` on both lanes
+
+## 17. Non-dot4 candidate shortlist + shape priority (2026-03-25)
+
+Inputs:
+
+- dtype summary:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/rocblas_gemm_dtype_summary_rocblas_gemm_shapes_g4_rocblas_trace_gpt-oss_latest_20260324_045255_20260324_045658_20260325_010632.txt`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/rocblas_gemm_dtype_summary_rocblas_gemm_shapes_g4_rocblas_trace_gpt-oss_latest_20260324_045255_20260324_045658_20260325_010632.tsv`
+- shape source:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/rocblas_gemm_shapes_g4_rocblas_trace_gpt-oss_latest_20260324_045255_20260324_045658.tsv`
+
+Observed (`gpt-oss` anchor trace, gemm-only rows):
+
+- `total_gemm=501`
+- `non_dot4_like=501` (100%)
+- `int8_or_i32_like=0`
+- dtype mix:
+  - `bf16_r|bf16_r|||` -> `288` (57.49%)
+  - `f16_r|f16_r|||` -> `144` (28.74%)
+  - `f32_r|f32_r|f32_r|f32_r|f32_r` -> `69` (13.77%)
+
+Interpretation:
+
+- [main-node confirmed] The current direct-dispatch anchor is dominated by
+  BF16/F16/F32 GEMM signatures, with no int8/i32 signature in gemm rows.
+- [inference] For immediate optimization work, non-dot4 paths should be treated
+  as the first-class target in this lane.
+
+Priority order for "which shape to stab first":
+
+1. Tier-1 (highest frequency, baseline lane core)
+   - `512x512x2880` (19.16%)
+   - `2880x512x4096` (9.58%)
+   - `4096x512x2880` (9.58%)
+2. Tier-2 (decode-tail but still frequent)
+   - `512x93x2880` (9.58%)
+   - `32x512x2880` (9.18%)
+3. Tier-3 (batched-ex family for sensitivity checks)
+   - `4608x512x64`, `64x512x4608`, `8192x512x64`, `64x512x8192` (each 4.79%)
+
+Operational implication:
+
+- This closes two pending prep items in the weekly lane:
+  1) non-dot4 candidate shortlist
+  2) initial shape stab priority
+- Next step is per-shape memo split (Tier-1 first), then low-level kernel-side
+  checks under the same anchor condition.
