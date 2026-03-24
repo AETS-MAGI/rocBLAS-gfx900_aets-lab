@@ -17,10 +17,21 @@ Current Tier-1 notes:
 - `shape_4096x512x2880.md`
 - `tier1_shape_correlation_map.md` (Mermaid map)
 
+Tier-1 kernel-priority memos:
+
+- `shape_512x512x2880_kernel_priority.md`
+- `shape_2880x512x4096_kernel_priority.md`
+- `shape_4096x512x2880_kernel_priority.md`
+
 Queue-B notes:
 
 - `shape_512x93x2880.md`
 - `shape_32x512x2880.md`
+
+Queue-B kernel-priority memos:
+
+- `shape_512x93x2880_kernel_priority.md`
+- `shape_32x512x2880_kernel_priority.md`
 
 Queue-C notes:
 
@@ -28,6 +39,13 @@ Queue-C notes:
 - `shape_64x512x4608.md`
 - `shape_8192x512x64.md`
 - `shape_64x512x8192.md`
+
+Queue-C kernel-priority memos:
+
+- `shape_4608x512x64_kernel_priority.md`
+- `shape_64x512x4608_kernel_priority.md`
+- `shape_8192x512x64_kernel_priority.md`
+- `shape_64x512x8192_kernel_priority.md`
 
 Common probe references (2026-03-25):
 

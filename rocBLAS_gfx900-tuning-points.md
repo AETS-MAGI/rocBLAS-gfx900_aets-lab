@@ -874,3 +874,21 @@ Interpretation:
   evidence and should be interpreted together, not merged into one claim.
 - [inference] This cycle strengthens observation fidelity without requiring low-level
   code changes.
+
+## 24. Tier-1 per-shape kernel-priority memos (2026-03-25)
+
+Added per-shape memo files for observation-first kernel priority review:
+
+- `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_512x512x2880_kernel_priority.md`
+- `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_2880x512x4096_kernel_priority.md`
+- `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_4096x512x2880_kernel_priority.md`
+
+Characteristics:
+
+- observation-only (no kernel/source modifications)
+- fixed evidence chain:
+  - shape stability (baseline/side)
+  - stream-window decode signature
+  - lane-level `Cijk_*` candidate ranking
+  - HSACO mapping status (`3 matched + 1 unmatched`)
+- Mermaid map included in each memo for fast visual review.
