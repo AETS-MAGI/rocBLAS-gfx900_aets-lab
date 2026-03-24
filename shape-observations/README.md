@@ -16,6 +16,7 @@ Current Tier-1 notes:
 - `shape_2880x512x4096.md`
 - `shape_4096x512x2880.md`
 - `tier1_shape_correlation_map.md` (Mermaid map)
+- `shape_priority_overview.md` (Tier-1 + Queue-B/C one-sheet)
 
 Tier-1 kernel-priority memos:
 

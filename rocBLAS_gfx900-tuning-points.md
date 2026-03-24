@@ -915,3 +915,21 @@ Status:
   - stream-window decode signature
   - lane-level `Cijk_*` ranking
   - HSACO map (`3 matched + 1 unmatched`)
+
+## 26. Cross-queue one-sheet overview (2026-03-25)
+
+Added one-page overview across all 9 shape-priority memos:
+
+- `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_priority_overview.md`
+
+Contains:
+
+- Queue map (Tier-1 + Queue-B + Queue-C)
+- baseline/side observed-count table
+- shared candidate/HSACO layer summary
+- Mermaid diagrams for quick cross-check
+
+Role:
+
+- navigation and prioritization only
+- no new low-level claim beyond existing evidence
