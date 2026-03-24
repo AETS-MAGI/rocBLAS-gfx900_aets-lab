@@ -804,3 +804,73 @@ Interpretation [inference]:
   1) `Type_HH ... fallback_gfx900.hsaco` (packed-rich)
   2) `Type_BB_HPA ... fallback_gfx900.hsaco`
   3) `Type_HS_HPA ... fallback_gfx900.hsaco`
+
+## 23. Observation-only deepening cycle (2026-03-25 02:23 JST)
+
+Scope:
+
+- No kernel/source modification in this cycle.
+- Focus only on deeper observation granularity:
+  1) top-shape re-observation
+  2) baseline/side stability check
+  3) prefill/full proxy + stream-window split comparison
+  4) candidate -> hsaco -> disasm note refresh
+
+Anchor lane re-observation [main-node confirmed]:
+
+- baseline (`num_batch=512`):
+  - summary: `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260325_022355.txt`
+  - `direct/fallback/dispatch=1`, `gemm_lines=1002`, shapes:
+    - `512x512x2880=192`
+    - `2880x512x4096=96`
+    - `4096x512x2880=96`
+- side (`num_batch=1024`):
+  - summary: `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260325_022435.txt`
+  - `direct/fallback/dispatch=1`, `gemm_lines=1336`, shapes:
+    - `512x1024x2880=288`
+    - `2880x1024x4096=144`
+    - `4096x1024x2880=144`
+
+Prefill/full shape-proxy split [main-node confirmed]:
+
+- baseline split:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_prefill_decode_split_gpt-oss_latest_20260325_022531.txt`
+- side split:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_prefill_decode_split_gpt-oss_latest_20260325_022637.txt`
+- both lanes:
+  - `decode_delta_gemm_lines=0`
+  - `decode_delta_target_shape_hits=0`
+  - `phase_split_status=prefill_dominant_signature`
+
+Stream phase-window split [main-node confirmed]:
+
+- baseline sweep (`num_predict=64,128,256`):
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260325_022802.txt`
+- side sweep (`num_predict=64,128,256`):
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260325_022953.txt`
+- both lanes:
+  - `ok_cases=3`
+  - `decode_signature_cases=3`
+  - all rows `direct/fallback/dispatch=1`
+  - `decode_kernel_tensile_like_rows=167`
+
+Candidate -> HSACO refresh [main-node confirmed]:
+
+- candidates:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_022545__rocprofv3_summary_gpt-oss_latest_20260325_022614_20260325_023311.txt`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_022651__rocprofv3_summary_gpt-oss_latest_20260325_022727_20260325_023315.txt`
+- map (both lanes):
+  - `total_candidates=4`, `matched_candidates=3`, unmatched `...ISA900...` persists
+- extract + disasm:
+  - extract manifest: `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_targets_hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_022545__rocprofv3_summary_gpt-oss_latest_20260325_022614_20260325_023311_20260325_023331_20260325_023347.txt`
+  - disasm summary: `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/disasm_signal_summary_hsaco_targets_hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_022545__rocprofv3_summary_gpt-oss_latest_20260325_022614_20260325_023311_20260325_023331_20260325_023347_20260325_023354.txt`
+  - signals unchanged: `dot4=0`, `mfma=0`, `packed_positive_files=1`, `memory_positive_files=3`
+
+Interpretation:
+
+- [inference] The anchor remains stable across baseline/side and across the tested
+  decode-length range in stream-window probes.
+- [inference] Shape-proxy split and stream-window split expose different layers of
+  evidence and should be interpreted together, not merged into one claim.
+- [inference] This cycle strengthens observation fidelity without requiring low-level
+  code changes.
