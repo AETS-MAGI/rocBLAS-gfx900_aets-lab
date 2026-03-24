@@ -1,6 +1,6 @@
 # rocBLAS gfx900 Tuning Points (MI25)
 
-Last updated: 2026-03-24
+Last updated: 2026-03-25
 Target: `ROCm-repos_AETS/rocBLAS`
 
 ## 1. Scope
@@ -510,3 +510,43 @@ Implication:
 
 - The minimum keep-alive requirement is not specific to baseline512.
 - Apply `keep_alive>=10s` uniformly when collecting stream-phase rocBLAS evidence.
+
+## 16. Path recheck + anchor-lane auto-summary (2026-03-25)
+
+Path-resolution recheck (using anchor lane summaries):
+
+- baseline source:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/g4_summary_gpt-oss_latest_20260324_034636.txt`
+- side source:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/g4_summary_gpt-oss_latest_20260324_035250.txt`
+
+Observed in both lanes:
+
+- `libggml-hip.so` is loaded from:
+  - `/home/limonene/ROCm-project/ollama-src/build-gfx900/lib/ollama/libggml-hip.so`
+- `librocblas.so.5` resolves to system ROCm:
+  - `/opt/rocm-7.2.0/lib/librocblas.so.5`
+- fallback `.dat/.hsaco` assets are read from fork-side Tensile library path:
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/build-mi25-gfx900/release/rocblas-install/lib/rocblas/library`
+
+This reconfirms the mixed but intentional runtime stack:
+
+1. GGML HIP backend from `build-gfx900`
+2. rocBLAS binary from system ROCm
+3. Tensile fallback assets from AETS fork-side path
+
+Automation update:
+
+- Added lane status summarizer:
+  - `/home/limonene/ROCm-project/ROCm-MI25-build/summarize-g4-anchor-lanes.sh`
+- latest output:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_anchor_lane_status_gpt-oss_latest_20260325_010009.txt`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_anchor_lane_status_gpt-oss_latest_20260325_010009.tsv`
+
+Key result from this aggregate:
+
+- baseline lane: `ok_cases=5`, `direct_hits=5`
+- side lane: `ok_cases=3`, `direct_hits=3`
+- stream compare rows: all 5 rows kept
+  - `direct/fallback/dispatch = 1`
+  - `decode_signature_detected` on both lanes
