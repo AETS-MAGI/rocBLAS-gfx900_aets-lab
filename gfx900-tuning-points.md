@@ -597,3 +597,171 @@ Operational implication:
   2) initial shape stab priority
 - Next step is per-shape memo split (Tier-1 first), then low-level kernel-side
   checks under the same anchor condition.
+
+## 18. Tier-1 per-shape notes (Queue-A split) (2026-03-25)
+
+Per-shape observation notes were split into dedicated files:
+
+- `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/README.md`
+- `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_512x512x2880.md`
+- `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_2880x512x4096.md`
+- `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_4096x512x2880.md`
+
+Captured comparison dimensions in each note:
+
+1. direct dispatch stability
+2. gemm-line volume
+3. Tensile-like rows
+4. prefill/decode proxy difference
+
+Current state:
+
+- Queue-A (Tier-1) split: done.
+- Queue-B/C split: done (shape note files added).
+
+## 19. Full-shape prefill/full compare tables (Queue-B/C visibility) (2026-03-25)
+
+Added helper:
+
+- `/home/limonene/ROCm-project/ROCm-MI25-build/compare-rocblas-shape-counts.sh`
+
+Latest outputs:
+
+- baseline lane compare:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/rocblas_shape_prefill_full_compare_g4_rocblas_trace_gpt-oss_latest_20260325_011553__g4_rocblas_trace_gpt-oss_latest_20260325_011629_20260325_012104.tsv`
+- side lane compare:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/rocblas_shape_prefill_full_compare_g4_rocblas_trace_gpt-oss_latest_20260325_011411__g4_rocblas_trace_gpt-oss_latest_20260325_011439_20260325_012104.tsv`
+
+Observed [main-node confirmed]:
+
+- both lanes: `__TOTAL__ delta = 0` (`prefill_count == full_count`)
+- baseline top includes Queue-B/C candidates:
+  - `512x93x2880` (48), `32x512x2880` (46)
+  - `4608x512x64`, `64x512x4608`, `8192x512x64`, `64x512x8192` (24 each)
+- side top includes batch-shifted variants:
+  - `32x1024x2880` (69)
+  - `5120x1024x64`, `64x1024x5120`, `8192x1024x64`, `64x1024x8192` (36 each)
+
+Interpretation [inference]:
+
+- Queue-B/C are now visible in the same prefill/full compare framework.
+- Current proxy split still indicates prefill-dominant signature under this anchor.
+- This keeps Queue-B/C ready for deeper per-kernel correlation without changing
+  the established gate conditions.
+
+Queue-B/C note files:
+
+- Queue-B:
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_512x93x2880.md`
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_32x512x2880.md`
+- Queue-C:
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_4608x512x64.md`
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_64x512x4608.md`
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_8192x512x64.md`
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_64x512x8192.md`
+
+## 20. Kernel candidate narrowing from rocprof summaries (2026-03-25)
+
+Added helper:
+
+- `/home/limonene/ROCm-project/ROCm-MI25-build/summarize-kernel-candidates.sh`
+
+Purpose:
+
+- Read prefill/full `rocprofv3_summary_*.txt`.
+- Resolve `kernel_trace_file` from each summary.
+- Compare kernel-name counts and classify likely matmul-path candidates.
+
+Latest outputs:
+
+- baseline lane:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_011606__rocprofv3_summary_gpt-oss_latest_20260325_011645_20260325_013150.tsv`
+- side lane:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_011425__rocprofv3_summary_gpt-oss_latest_20260325_011502_20260325_013150.tsv`
+
+Observed [main-node confirmed]:
+
+- baseline dispatch rows: `2384 -> 25204` (`delta=22820`)
+- side dispatch rows: `2383 -> 25021` (`delta=22638`)
+- both lanes keep the same top matmul-related families:
+  - `mul_mat_vec_f<...>`
+  - `mul_mat_vec_q<(ggml_type)39, ...>`
+  - `mul_mat_q<(ggml_type)39, ...>`
+  - `Cijk_*` (Tensile kernel names)
+
+Interpretation [inference]:
+
+- Candidate narrowing is now scriptable/repeatable from summary inputs.
+- For next step, `Cijk_*` kernels are suitable starting points for HSACO
+  extraction + disassembly target minimization under the current anchor.
+
+## 21. HSACO mapping/extraction for disassembly target set (2026-03-25)
+
+Added helpers:
+
+- `/home/limonene/ROCm-project/ROCm-MI25-build/map-kernel-candidates-to-hsaco.sh`
+- `/home/limonene/ROCm-project/ROCm-MI25-build/extract-hsaco-targets.sh`
+
+Inputs:
+
+- baseline map source:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_011606__rocprofv3_summary_gpt-oss_latest_20260325_011645_20260325_013150.tsv`
+- side map source:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_011425__rocprofv3_summary_gpt-oss_latest_20260325_011502_20260325_013150.tsv`
+
+Observed [main-node confirmed]:
+
+- `Cijk_*` 4 candidates:
+  - matched to `*gfx900*.hsaco`: 3
+  - unmatched in current gfx900 library scan: 1 (`...ISA900...`)
+- extracted target set:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_targets_hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_011606__rocprofv3_summary_gpt-oss_latest_20260325_011645_20260325_013150_20260325_013452_20260325_013541`
+  - file count: 3
+  - total size: `876K`
+
+Target HSACO files:
+
+- `TensileLibrary_Type_BB_HPA_Contraction_l_Alik_Bljk_Cijk_Dijk_fallback_gfx900.hsaco`
+- `TensileLibrary_Type_HH_Contraction_l_Alik_Bljk_Cijk_Dijk_fallback_gfx900.hsaco`
+- `TensileLibrary_Type_HS_HPA_Contraction_l_Alik_Bljk_Cijk_Dijk_fallback_gfx900.hsaco`
+
+Interpretation [inference]:
+
+- Disassembly target scope is now reduced to a small, explicit 3-file set.
+- This is sufficient to begin instruction-level checks without broad scanning.
+
+## 22. Disassembly signal summary on extracted 3-file set (2026-03-25)
+
+Added helper:
+
+- `/home/limonene/ROCm-project/ROCm-MI25-build/summarize-hsaco-disasm-signals.sh`
+
+Inputs:
+
+- extracted target dir:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_targets_hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_011606__rocprofv3_summary_gpt-oss_latest_20260325_011645_20260325_013150_20260325_013452_20260325_013541`
+
+Outputs:
+
+- summary txt:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/disasm_signal_summary_hsaco_targets_hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_011606__rocprofv3_summary_gpt-oss_latest_20260325_011645_20260325_013150_20260325_013452_20260325_013541_20260325_013821.txt`
+
+Observed [main-node confirmed]:
+
+- `dot4_positive_files=0`
+- `mfma_positive_files=0`
+- `packed_positive_files=1`
+- `memory_positive_files=3`
+- packed instruction example:
+  - `v_pk_fma_f16 ...` (HH fallback file)
+- memory instruction examples:
+  - `global_load_dword`, `ds_read2_b32`, `ds_write_b16`
+
+Interpretation [inference]:
+
+- In the current extracted target set, instruction signature is dominated by
+  FMA-like + memory operations rather than dot4/mfma.
+- For deeper manual disassembly, prioritize:
+  1) `Type_HH ... fallback_gfx900.hsaco` (packed-rich)
+  2) `Type_BB_HPA ... fallback_gfx900.hsaco`
+  3) `Type_HS_HPA ... fallback_gfx900.hsaco`
