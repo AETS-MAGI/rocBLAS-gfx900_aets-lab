@@ -892,3 +892,26 @@ Characteristics:
   - lane-level `Cijk_*` candidate ranking
   - HSACO mapping status (`3 matched + 1 unmatched`)
 - Mermaid map included in each memo for fast visual review.
+
+## 25. Queue-B/C per-shape kernel-priority memos (2026-03-25)
+
+Extended the same observation-only memo format to Queue-B/C:
+
+- Queue-B:
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_512x93x2880_kernel_priority.md`
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_32x512x2880_kernel_priority.md`
+- Queue-C:
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_4608x512x64_kernel_priority.md`
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_64x512x4608_kernel_priority.md`
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_8192x512x64_kernel_priority.md`
+  - `/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/shape-observations/shape_64x512x8192_kernel_priority.md`
+
+Status:
+
+- no low-level code change
+- no Tensile asset rewrite
+- observation-only chain preserved:
+  - shape stability
+  - stream-window decode signature
+  - lane-level `Cijk_*` ranking
+  - HSACO map (`3 matched + 1 unmatched`)
