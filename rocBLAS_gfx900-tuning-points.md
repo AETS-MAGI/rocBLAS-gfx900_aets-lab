@@ -8,6 +8,45 @@ Target: `ROCm-repos_AETS/rocBLAS`
 This note lists practical tuning points for LLM inference on MI25/gfx900
 (ollama + GGML/HIP), ordered by likely impact.
 
+### 1.1 Overlap topics with Tensile note (explicit list)
+
+The following topics currently appear in both notes and are intentionally
+tracked as shared context:
+
+1. anchor workload (`gpt-oss` anchor condition)
+2. baseline/side lane (`num_batch=512/1024`)
+3. `keep_alive` threshold and observability
+4. shape observability (top-shape families and lane shifts)
+5. runtime path / mixed stack facts
+6. direct/indirect dispatch wording and gate status
+
+### 1.2 Role split (authoritative owner)
+
+For maintenance going forward, this rocBLAS note is the primary location for:
+
+- runtime path / mixed stack status (`librocblas.so.5` resolution + path order)
+- GEMM shape observation and lane-level shape movement
+- client/runtime knobs (`num_thread`, `num_ctx`, `num_predict`, `keep_alive`)
+- observability lane operations (baseline/side and stream-window comparison)
+
+The following topics are secondary here and primary in
+`../Tensile/Tensile_gfx900-tuning-points.md`:
+
+- fallback asset inventory details
+- HSACO extraction pipeline
+- disassembly signal summaries
+- kernel candidate narrowing process
+
+### 1.3 Wording guard (for README and cross-note consistency)
+
+- `direct dispatch`:
+  same-scenario evidence where rocBLAS/Tensile-named dispatch-level traces are visible.
+- `indirect link only`:
+  fallback + dispatch are both confirmed in the same scenario, but direct
+  rocBLAS/Tensile naming is absent.
+- `catalog-read evidence` and `dispatch evidence` are different gates and must
+  not be treated as interchangeable.
+
 Current facts:
 
 - [main-node confirmed] `librocblas.so.5` may resolve from system ROCm.
