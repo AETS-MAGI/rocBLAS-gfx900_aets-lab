@@ -1157,3 +1157,39 @@ Interpretation [inference]:
 - The one-shape gate is now operational with a canonical naming path
   (`RUN_TAG` + lane-indexed artifacts).
 - This is an entry-loop result, not a kernel-level causality claim.
+
+## 32. One-shape repeat stability (3 runs) (2026-03-25 14 JST)
+
+Scope:
+
+- same one-shape target (`512x512x2880`)
+- same one-point A/B (libpath only)
+- repeated runs: initial + rerun1 + rerun2
+
+Executed [main-node confirmed]:
+
+- loop TSVs:
+  - `.../g4_k1_single_shape_loop_k1_entry_20260325_1shape.tsv`
+  - `.../g4_k1_single_shape_loop_k1_entry_20260325_1shape_rerun1.tsv`
+  - `.../g4_k1_single_shape_loop_k1_entry_20260325_1shape_rerun2.tsv`
+- repeat summary helper:
+  - `/home/limonene/ROCm-project/ROCm-MI25-build/summarize-k1-single-shape-repeats.sh`
+  - output:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260325_1shape_20260325_143343.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - fallback/dispatch/direct all `1` in all runs (`all_same=1`)
+  - `shape_hits_mode=192` (`all_same=1`)
+  - `tok_s(avg/min/max)=49.8266/49.7468/49.8963`
+- system lane:
+  - fallback/dispatch/direct all `0` in all runs (`all_same=1`)
+  - `shape_hits_mode=0` (`all_same=1`)
+  - `tok_s(avg/min/max)=5.3880/5.2899/5.5733`
+
+Interpretation [inference]:
+
+- For the current one-shape entry gate, lane separation is stable across
+  repeated runs.
+- This supports moving to "single knob delta" checks without expanding shape set.
