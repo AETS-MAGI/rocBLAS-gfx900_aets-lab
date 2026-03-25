@@ -1014,6 +1014,10 @@ Executed [main-node confirmed]:
     - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092328__rocprofv3_summary_gpt-oss_latest_20260325_092357_20260325_105550_20260325_105606.txt`
   - side map:
     - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092433__rocprofv3_summary_gpt-oss_latest_20260325_092510_20260325_105556_20260325_105606.txt`
+- lane automation wrapper added:
+  - `/home/limonene/ROCm-project/ROCm-MI25-build/summarize-k1-entry.sh`
+  - latest output:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/k1_entry_lane_check_20260325_110634.txt`
 
 Observed [main-node confirmed]:
 
@@ -1026,3 +1030,38 @@ Interpretation [inference]:
 - First touchpoint remains `K1 (BBS_BH)` with `K2/K3` as secondary while
   keeping `K4` as unmatched watchpoint.
 - This section marks "entry started"; source/kernel edits are still pending.
+
+## 29. K1 entry gate hardening (2026-03-25 11 JST)
+
+Scope:
+
+- keep observation-first flow while tightening "first touchpoint" confidence.
+- no rocBLAS source edit in this step.
+
+Executed [main-node confirmed]:
+
+- lane wrapper:
+  - `/home/limonene/ROCm-project/ROCm-MI25-build/summarize-k1-entry.sh`
+  - output:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/k1_entry_lane_check_20260325_110634.txt`
+- HSACO/disasm cross-check for baseline/side maps:
+  - baseline disasm summary:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/disasm_signal_summary_hsaco_targets_hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092328__rocprofv3_summary_gpt-oss_latest_20260325_092357_20260325_110634_20260325_110635_20260325_110812_20260325_110821.txt`
+  - side disasm summary:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/disasm_signal_summary_hsaco_targets_hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092433__rocprofv3_summary_gpt-oss_latest_20260325_092510_20260325_110636_20260325_110636_20260325_110812_20260325_110822.txt`
+
+Observed [main-node confirmed]:
+
+- baseline/side both:
+  - `total_candidates=4`, `matched_candidates=3`
+  - `K1_full=96`, `K1_match=1`
+  - `K4_match=0`
+- disasm aggregate also matches between lanes:
+  - `dot4_positive_files=0`, `mfma_positive_files=0`
+  - `packed_positive_files=1`, `memory_positive_files=3`
+
+Interpretation [inference]:
+
+- K1-first entry gate is now stable across baseline/side at
+  candidate -> hsaco -> disasm levels.
+- Next low-level action should stay narrowly scoped to K1-first A/B verification.
