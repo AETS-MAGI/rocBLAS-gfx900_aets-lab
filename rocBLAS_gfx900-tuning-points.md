@@ -1450,3 +1450,46 @@ Interpretation [inference]:
   keeps direct-observability signatures stable but increases runtime cost.
 - This section is anchor-scoped (`gpt-oss:latest`) and does not assert
   cross-workload behavior.
+
+## 39. Single-knob control test (`num_thread: 6 -> 8`) (2026-03-26 04 JST)
+
+Scope:
+
+- keep one-shape gate fixed (`512x512x2880`)
+- keep one-point lane split fixed (libpath only)
+- change exactly one runtime knob: `NUM_THREAD`
+- keep `NUM_PREDICT=128`, `NUM_CTX=8192`, `KEEP_ALIVE=5m` fixed
+
+Executed [main-node confirmed]:
+
+- nt6b run root:
+  - `k1_entry_20260326_1shape_nt6b` (+ rerun1, rerun2)
+- nt8 run root:
+  - `k1_entry_20260326_1shape_nt8` (+ rerun1, rerun2)
+- repeat summaries:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_nt6b_20260326_042113.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_nt8_20260326_042113.tsv`
+- control compare:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_num_thread_6_vs_8_20260326_0421.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - observability class unchanged:
+    - phase `decode_signature_detected`
+    - `shape_hits=192`
+    - `fallback/dispatch/direct=1/1/1`
+    - `rocblas_trace_gemm_avg=1002`
+  - metric deltas are small:
+    - `ttft_ms_avg`: `12404.614 -> 12388.718` (delta `-15.896`)
+    - `total_ms_avg`: `15056.919 -> 15025.956` (delta `-30.963`)
+    - `tok_s_avg`: `49.7767 -> 49.8512` (delta `+0.0745`)
+- system lane:
+  - `unavailable` / `shape_hits=0` / `dispatch=0` / `gemm=0` unchanged
+  - runtime metrics worsened (`total` up, `tok_s` down)
+
+Interpretation [inference]:
+
+- `NUM_THREAD=8` keeps direct-observability class unchanged, but AETS gains are
+  marginal under this anchor.
+- For stable lane-comparison baselining, keep `NUM_THREAD=6` as the default.
