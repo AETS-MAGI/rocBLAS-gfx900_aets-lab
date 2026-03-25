@@ -1065,3 +1065,56 @@ Interpretation [inference]:
 - K1-first entry gate is now stable across baseline/side at
   candidate -> hsaco -> disasm levels.
 - Next low-level action should stay narrowly scoped to K1-first A/B verification.
+
+## 30. Runtime-path A/B check at K1 entry (2026-03-25 14 JST)
+
+Scope:
+
+- observation-only A/B check with fixed anchor
+  (`MODEL=gpt-oss:latest`, `NUM_BATCH=512`, `NUM_CTX=8192`,
+  `NUM_PREDICT=128`, `ROCBLAS_LAYER=9`).
+- isolate runtime path by changing only `ROCBLAS_TENSILE_LIBPATH`.
+- no rocBLAS source patch in this step.
+
+Lane setup [main-node confirmed]:
+
+- AETS lane:
+  - `ROCBLAS_TENSILE_LIBPATH=/home/limonene/ROCm-project/ROCm-repos_AETS/rocBLAS/build-mi25-gfx900/release/rocblas-install/lib/rocblas/library`
+  - link summary:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_link_summary_gpt-oss_latest_20260325_135852.txt`
+- system lane:
+  - `ROCBLAS_TENSILE_LIBPATH=/opt/rocm-7.2.0/lib/rocblas/library`
+  - strace raw prefix:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/g4_strace_openat_gpt-oss_latest_20260325_140141.log*`
+  - rocprof summary:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/rocprofv3_summary_gpt-oss_latest_20260325_140345.txt`
+- A/B table:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_runtime_path_ab_compare_20260325_140536.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - `fallback_confirmed=1`, `dispatch_confirmed=1`,
+    `direct_rocblas_or_tensile_dispatch=1`
+  - `rocblas_trace_gemm_lines=1002`
+  - `kernel_dispatch_rows=21664`, `kernel_tensile_like_rows=167`
+- system lane:
+  - `fallback_confirmed=0`, `dispatch_confirmed=0`,
+    `direct_rocblas_or_tensile_dispatch=0`
+  - `rocblas_trace_gemm_lines=0`
+  - `kernel_dispatch_rows=0`, `kernel_tensile_like_rows=0`
+  - strace confirms `librocblas.so.5` resolved from
+    `/opt/rocm-7.2.0/lib/librocblas.so.5`
+
+Tooling note:
+
+- Current `g4-fallback-strace-check.sh` exits early when fallback matches are
+  zero (no `.dat/.hsaco` lines), so system-lane fallback counts were taken from
+  raw strace files directly.
+
+Interpretation [inference]:
+
+- Under fixed anchor conditions, runtime path is a high-impact observability
+  knob at K1 entry.
+- This remains path-level evidence only; no kernel-level causal mapping is
+  claimed in this section.
