@@ -1309,3 +1309,46 @@ Interpretation [inference]:
   on AETS lane.
 - Therefore `KEEP_ALIVE=0s` is not treated as a safe default for the current
   anchor gate, even though runtime metrics improved.
+
+## 36. Single-knob control test (`num_ctx: 8192 -> 12288`) (2026-03-25 19 JST)
+
+Scope:
+
+- keep one-shape gate fixed (`512x512x2880`)
+- keep one-point lane split fixed (libpath only)
+- change exactly one runtime knob: `NUM_CTX`
+- keep `NUM_THREAD=6`, `KEEP_ALIVE=5m` fixed
+
+Executed [main-node confirmed]:
+
+- ctx8192 run root:
+  - `k1_entry_20260325_1shape_ctx8192` (+ rerun1, rerun2)
+- ctx12288 run root:
+  - `k1_entry_20260325_1shape_ctx12288` (+ rerun1, rerun2)
+- repeat summaries:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260325_1shape_ctx8192_20260325_191904.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260325_1shape_ctx12288_20260325_191904.tsv`
+- control compare:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_num_ctx_8192_vs_12288_20260325_1919.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - observability class unchanged:
+    - phase `decode_signature_detected`
+    - `shape_hits=192`
+    - `fallback/dispatch/direct=1/1/1`
+    - `rocblas_trace_gemm_avg=1002`
+  - metric deltas:
+    - `ttft_ms_avg`: `12810.885 -> 13306.427` (delta `+495.542`)
+    - `total_ms_avg`: `15459.284 -> 15948.243` (delta `+488.959`)
+    - `tok_s_avg`: `49.6657 -> 49.8763` (delta `+0.2106`)
+- system lane:
+  - `unavailable` / `shape_hits=0` / `dispatch=0` unchanged
+
+Interpretation [inference]:
+
+- This control preserves the gate observability class, so it is safe for
+  continued comparison use.
+- At the runtime metric layer, `NUM_CTX=12288` is a trade-off profile
+  (slightly higher latency, slightly higher throughput) vs `8192`.
