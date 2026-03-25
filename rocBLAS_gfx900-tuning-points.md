@@ -1493,3 +1493,38 @@ Interpretation [inference]:
 - `NUM_THREAD=8` keeps direct-observability class unchanged, but AETS gains are
   marginal under this anchor.
 - For stable lane-comparison baselining, keep `NUM_THREAD=6` as the default.
+
+## 40. Candidate/HSACO layer comparison (`num_thread 6 vs 8`, no new run) (2026-03-26 04 JST)
+
+Scope:
+
+- reuse C7 run artifacts only (`nt6b` and `nt8`, 3 repeats each)
+- no source edits, no extra runtime probe execution
+- compare candidate kernel counts and HSACO mapping stability
+
+Executed [main-node confirmed]:
+
+- candidate compare outputs:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_cijk_candidate_compare_num_thread_6_vs_8_20260326_0429.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_cijk_candidate_compare_num_thread_6_vs_8_20260326_0429.txt`
+- hsaco map compare outputs:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_hsaco_map_compare_num_thread_6_vs_8_20260326_0429.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_hsaco_map_compare_num_thread_6_vs_8_20260326_0429.txt`
+
+Observed [main-node confirmed]:
+
+- all tracked `Cijk_*` candidate counts are identical between `nt6` and `nt8`:
+  - BBS: `288 vs 288`
+  - HB_GB (ISA900): `72 vs 72`
+  - HSS_BH_GB: `72 vs 72`
+  - SB (ISA900): `69 vs 69`
+- `tensile_like_rows_total`: `501 vs 501`
+- hsaco mapping coverage unchanged for all 4 tracked candidate kernels
+  (`changed_match_count_kernels=0`)
+
+Interpretation [inference]:
+
+- The marginal runtime differences in C7 do not correspond to observable
+  candidate/hsaco identity changes in this anchor.
+- This reinforces using `NUM_THREAD=6` as stable baseline while keeping
+  `NUM_THREAD=8` as a side profile with equivalent path identity.
