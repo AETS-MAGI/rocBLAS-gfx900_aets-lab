@@ -1229,3 +1229,43 @@ Interpretation [inference]:
 - Lane separation is preserved under this one-knob control test.
 - For the current shape gate, increasing `NUM_PREDICT` does not change the
   direct-observability signature, but it shifts runtime metrics.
+
+## 34. Single-knob control test (`num_thread: 4 -> 6`) (2026-03-25 15 JST)
+
+Scope:
+
+- keep one-shape gate fixed (`512x512x2880`)
+- keep one-point lane split fixed (libpath only)
+- change exactly one runtime knob: `NUM_THREAD`
+
+Executed [main-node confirmed]:
+
+- nt4 run root:
+  - `k1_entry_20260325_1shape_nt4` (+ rerun1, rerun2)
+- nt6 run root:
+  - `k1_entry_20260325_1shape_nt6` (+ rerun1, rerun2)
+- repeat summaries:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260325_1shape_nt4_20260325_155820.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260325_1shape_nt6_20260325_155820.tsv`
+- control compare:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_num_thread_4_vs_6_20260325_1559.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - phase unchanged: `decode_signature_detected`
+  - shape hits unchanged: `192 -> 192`
+  - `rocblas_trace_gemm_avg` unchanged: `1002 -> 1002`
+  - `ttft_ms_avg`: `15675.346 -> 12470.038` (delta `-3205.308`)
+  - `total_ms_avg`: `18323.679 -> 15099.288` (delta `-3224.391`)
+  - `tok_s_avg`: `49.7187 -> 50.0184` (delta `+0.2997`)
+- system lane:
+  - phase unchanged: `unavailable`
+  - shape hits unchanged: `0 -> 0`
+  - dispatch/gemm averages remain 0
+
+Interpretation [inference]:
+
+- Lane separation remains stable under this single-knob change.
+- On the current one-shape gate, `NUM_THREAD=6` is favorable vs `4` at the
+  runtime metric layer, while direct-observability signatures are unchanged.
