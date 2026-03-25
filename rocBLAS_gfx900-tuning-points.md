@@ -991,3 +991,38 @@ Interpretation [inference]:
   as separate evidence layers; they are not interchangeable gates.
 - For side-lane split comparisons, target-shape set should be lane-aware
   (`*x1024x*` family) when shape-hit deltas are evaluated.
+
+## 28. Low-level entry start (shape-first, no patch yet) (2026-03-25 10 JST)
+
+Scope:
+
+- start low-level optimization from the highest-confidence shape pair
+  without touching source kernels yet.
+- target pair:
+  - baseline: `512x512x2880`
+  - side: `512x1024x2880`
+
+Executed [main-node confirmed]:
+
+- refresh candidate extraction from latest split runs:
+  - baseline:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092328__rocprofv3_summary_gpt-oss_latest_20260325_092357_20260325_105550.txt`
+  - side:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092433__rocprofv3_summary_gpt-oss_latest_20260325_092510_20260325_105556.txt`
+- refreshed candidate -> hsaco mapping (both lanes):
+  - baseline map:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092328__rocprofv3_summary_gpt-oss_latest_20260325_092357_20260325_105550_20260325_105606.txt`
+  - side map:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092433__rocprofv3_summary_gpt-oss_latest_20260325_092510_20260325_105556_20260325_105606.txt`
+
+Observed [main-node confirmed]:
+
+- both lanes: `total_candidates=4`, `matched_candidates=3`
+- unmatched candidate remains `..._SB_..._ISA900...`
+
+Interpretation [inference]:
+
+- Entry gate is now satisfied for shape-first low-level work.
+- First touchpoint remains `K1 (BBS_BH)` with `K2/K3` as secondary while
+  keeping `K4` as unmatched watchpoint.
+- This section marks "entry started"; source/kernel edits are still pending.

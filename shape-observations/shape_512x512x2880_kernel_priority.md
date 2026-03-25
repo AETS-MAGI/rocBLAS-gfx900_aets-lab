@@ -75,3 +75,14 @@ flowchart LR
 - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_anchor_lane_status_gpt-oss_latest_20260325_092620.txt`
 - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_022545__rocprofv3_summary_gpt-oss_latest_20260325_022614_20260325_023311.tsv`
 - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_022545__rocprofv3_summary_gpt-oss_latest_20260325_022614_20260325_023311_20260325_023331.tsv`
+
+## 7. Entry status (2026-03-25 10 JST)
+
+- [main-node confirmed] Low-level optimization entry has started for this shape pair:
+  - latest baseline candidate summary:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092328__rocprofv3_summary_gpt-oss_latest_20260325_092357_20260325_105550.txt`
+  - latest side candidate summary:
+    - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_092433__rocprofv3_summary_gpt-oss_latest_20260325_092510_20260325_105556.txt`
+  - hsaco mapping (both lanes): `total_candidates=4`, `matched_candidates=3`
+- [inference] The first low-level touchpoint remains `K1 (BBS_BH)` with
+  `K2/K3` as secondary, while keeping `K4` as unmatched watchpoint.
