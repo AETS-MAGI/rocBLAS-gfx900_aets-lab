@@ -1269,3 +1269,43 @@ Interpretation [inference]:
 - Lane separation remains stable under this single-knob change.
 - On the current one-shape gate, `NUM_THREAD=6` is favorable vs `4` at the
   runtime metric layer, while direct-observability signatures are unchanged.
+
+## 35. Single-knob control test (`keep_alive: 5m -> 0s`) (2026-03-25 18 JST)
+
+Scope:
+
+- keep one-shape gate fixed (`512x512x2880`)
+- keep one-point lane split fixed (libpath only)
+- change exactly one runtime knob: `KEEP_ALIVE`
+- keep `NUM_THREAD=6` fixed (from prior C2 result)
+
+Executed [main-node confirmed]:
+
+- ka5m run root:
+  - `k1_entry_20260325_1shape_ka5m` (+ rerun1, rerun2)
+- ka0s run root:
+  - `k1_entry_20260325_1shape_ka0s` (+ rerun1, rerun2)
+- repeat summaries:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260325_1shape_ka5m_20260325_185004.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260325_1shape_ka0s_20260325_185004.tsv`
+- control compare:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_keep_alive_5m_vs_0s_20260325_1850.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - `shape_hits_mode` unchanged: `192 -> 192`
+  - `fallback_mode` unchanged: `1 -> 1`
+  - `direct_mode` unchanged: `1 -> 1`
+  - `dispatch_mode` changed: `1 -> 0`
+  - `phase_set` changed: `decode_signature_detected -> unavailable`
+  - runtime metrics moved in favorable direction (`ttft/total` down, `tok_s` up)
+- system lane:
+  - `unavailable` / `shape_hits=0` / `dispatch=0` unchanged
+
+Interpretation [inference]:
+
+- Unlike C2 (`NUM_THREAD`), this control changes part of the observability class
+  on AETS lane.
+- Therefore `KEEP_ALIVE=0s` is not treated as a safe default for the current
+  anchor gate, even though runtime metrics improved.
