@@ -1352,3 +1352,101 @@ Interpretation [inference]:
   continued comparison use.
 - At the runtime metric layer, `NUM_CTX=12288` is a trade-off profile
   (slightly higher latency, slightly higher throughput) vs `8192`.
+
+## 37. Single-knob control test (`prompt profile: short/math/code`) (2026-03-26 03 JST)
+
+Scope:
+
+- keep one-shape gate fixed (`512x512x2880`)
+- keep one-point lane split fixed (libpath only)
+- change exactly one workload knob: prompt profile (`short/math/code`)
+- keep `NUM_THREAD=6`, `KEEP_ALIVE=5m`, `NUM_CTX=8192` fixed
+
+Executed [main-node confirmed]:
+
+- short run root:
+  - `k1_entry_20260326_1shape_prompt_short` (+ rerun1, rerun2)
+- math run root:
+  - `k1_entry_20260326_1shape_prompt_math` (+ rerun1, rerun2)
+- code run root:
+  - `k1_entry_20260326_1shape_prompt_code` (+ rerun1, rerun2)
+- repeat summaries:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_prompt_short_20260326_032542.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_prompt_math_20260326_033152.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_prompt_code_20260326_033800.tsv`
+- profile overview:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_prompt_profile_overview_20260326_0340.tsv`
+- control compares:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_prompt_short_vs_math_20260326_0340.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_prompt_short_vs_code_20260326_0340.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - observability class unchanged across all profiles:
+    - phase `decode_signature_detected`
+    - `shape_hits=192`
+    - `fallback/dispatch/direct=1/1/1`
+    - `rocblas_trace_gemm_avg=1002`
+  - metric deltas (short baseline):
+    - short -> math:
+      - `ttft_ms_avg`: `12304.882 -> 11392.830` (delta `-912.052`)
+      - `total_ms_avg`: `14946.368 -> 13619.581` (delta `-1326.787`)
+      - `tok_s_avg`: `49.7819 -> 49.9860` (delta `+0.2041`)
+    - short -> code:
+      - `ttft_ms_avg`: `12304.882 -> 10837.344` (delta `-1467.538`)
+      - `total_ms_avg`: `14946.368 -> 13482.570` (delta `-1463.798`)
+      - `tok_s_avg`: `49.7819 -> 49.6511` (delta `-0.1308`)
+- system lane:
+  - `unavailable` / `shape_hits=0` / `dispatch=0` / `gemm=0` unchanged
+
+Interpretation [inference]:
+
+- This control preserves the gate observability class while allowing prompt-level
+  runtime metric differences to be measured.
+- Interpretation is anchor-scoped (`gpt-oss:latest`) and should not be
+  generalized to other workloads.
+
+## 38. Single-knob control test (`num_predict: 128 -> 512`, thread6 anchor) (2026-03-26 04 JST)
+
+Scope:
+
+- keep one-shape gate fixed (`512x512x2880`)
+- keep one-point lane split fixed (libpath only)
+- change exactly one workload knob: `NUM_PREDICT`
+- keep `NUM_THREAD=6`, `KEEP_ALIVE=5m`, `NUM_CTX=8192` fixed
+
+Executed [main-node confirmed]:
+
+- np128_t6 run root:
+  - `k1_entry_20260326_1shape_np128_t6` (+ rerun1, rerun2)
+- np512_t6 run root:
+  - `k1_entry_20260326_1shape_np512_t6` (+ rerun1, rerun2)
+- repeat summaries:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_np128_t6_20260326_040402.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_np512_t6_20260326_040402.tsv`
+- control compare:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_num_predict_128_vs_512_t6_20260326_0404.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - observability class unchanged:
+    - phase `decode_signature_detected`
+    - `shape_hits=192`
+    - `fallback/dispatch/direct=1/1/1`
+    - `rocblas_trace_gemm_avg=1002`
+  - metric deltas:
+    - `ttft_ms_avg`: `11242.267 -> 12622.351` (delta `+1380.084`)
+    - `total_ms_avg`: `13891.683 -> 23715.642` (delta `+9823.959`)
+    - `tok_s_avg`: `49.7057 -> 47.7211` (delta `-1.9846`)
+- system lane:
+  - `unavailable` / `shape_hits=0` / `dispatch=0` / `gemm=0` unchanged
+  - `total_ms_avg`: `35781.729 -> 111957.395` (delta `+76175.666`)
+
+Interpretation [inference]:
+
+- On the current thread6 anchor gate, extending decode length (`NUM_PREDICT`)
+  keeps direct-observability signatures stable but increases runtime cost.
+- This section is anchor-scoped (`gpt-oss:latest`) and does not assert
+  cross-workload behavior.
