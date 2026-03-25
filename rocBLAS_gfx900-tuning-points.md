@@ -1118,3 +1118,42 @@ Interpretation [inference]:
   knob at K1 entry.
 - This remains path-level evidence only; no kernel-level causal mapping is
   claimed in this section.
+
+## 31. One-shape K1 entry loop (2026-03-25 14 JST)
+
+Scope:
+
+- start low-level entry loop with exactly one target shape:
+  - `512x512x2880`
+- keep one-point A/B:
+  - only `ROCBLAS_TENSILE_LIBPATH` changes (AETS vs system)
+- keep anchor fixed:
+  - `MODEL=gpt-oss:latest`, `NUM_BATCH=512`, `NUM_CTX=8192`,
+    `NUM_PREDICT=128`, `KEEP_ALIVE=5m`, `STREAM=1`, `ROCBLAS_LAYER=9`
+
+Executed [main-node confirmed]:
+
+- runner:
+  - `/home/limonene/ROCm-project/ROCm-MI25-build/g4-k1-single-shape-loop.sh`
+- run tag:
+  - `k1_entry_20260325_1shape`
+- consolidated outputs:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_loop_k1_entry_20260325_1shape.txt`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_loop_k1_entry_20260325_1shape.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - `fallback=1`, `dispatch=1`, `direct=1`
+  - `shape_target_hits(512x512x2880)=192`
+  - `ttft_ms=12258.629`, `total_ms=14904.098`, `tok_s=49.8367`
+- system lane:
+  - `fallback=0`, `dispatch=0`, `direct=0`
+  - `shape_target_hits(512x512x2880)=0`
+  - `ttft_ms=15783.122`, `total_ms=39508.229`, `tok_s=5.2899`
+
+Interpretation [inference]:
+
+- The one-shape gate is now operational with a canonical naming path
+  (`RUN_TAG` + lane-indexed artifacts).
+- This is an entry-loop result, not a kernel-level causality claim.
