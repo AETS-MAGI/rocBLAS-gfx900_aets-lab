@@ -1528,3 +1528,37 @@ Interpretation [inference]:
   candidate/hsaco identity changes in this anchor.
 - This reinforces using `NUM_THREAD=6` as stable baseline while keeping
   `NUM_THREAD=8` as a side profile with equivalent path identity.
+
+## 41. Candidate/HSACO layer comparison (`num_ctx 8192 vs 12288`, no new run) (2026-03-26 06 JST)
+
+Scope:
+
+- reuse C4 run artifacts only (`ctx8192` and `ctx12288`, 3 repeats each)
+- no source edits, no extra runtime probe execution
+- compare candidate kernel counts and HSACO mapping stability
+
+Executed [main-node confirmed]:
+
+- candidate compare outputs:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_cijk_candidate_compare_num_ctx_8192_vs_12288_20260326_0640.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_cijk_candidate_compare_num_ctx_8192_vs_12288_20260326_0640.txt`
+- hsaco map compare outputs:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_hsaco_map_compare_num_ctx_8192_vs_12288_20260326_0640.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_hsaco_map_compare_num_ctx_8192_vs_12288_20260326_0640.txt`
+
+Observed [main-node confirmed]:
+
+- all tracked `Cijk_*` candidate counts are identical between `ctx8192` and `ctx12288`:
+  - BBS: `288 vs 288`
+  - HSS_BH_GB: `72 vs 72`
+- `tensile_like_rows_total`: `501 vs 501`
+- hsaco mapping coverage unchanged for all 2 tracked candidate kernels
+  (`changed_match_count_kernels=0`)
+
+Interpretation [inference]:
+
+- The C4 runtime metric deltas do not correspond to observable candidate/hsaco
+  identity changes in this anchor.
+- This supports keeping `NUM_CTX=8192` as baseline and `12288` as side profile
+  with equivalent path identity at the current observation layer.
+
