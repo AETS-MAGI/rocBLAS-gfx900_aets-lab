@@ -1193,3 +1193,39 @@ Interpretation [inference]:
 - For the current one-shape entry gate, lane separation is stable across
   repeated runs.
 - This supports moving to "single knob delta" checks without expanding shape set.
+
+## 33. Single-knob control test (`num_predict: 128 -> 256`) (2026-03-25 14 JST)
+
+Scope:
+
+- keep one-shape gate fixed (`512x512x2880`)
+- keep one-point lane split fixed (libpath only)
+- change exactly one workload knob: `NUM_PREDICT`
+
+Executed [main-node confirmed]:
+
+- np256 run root:
+  - `k1_entry_20260325_1shape_np256` (+ rerun1, rerun2)
+- repeat summary:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260325_1shape_np256_20260325_144830.tsv`
+- control compare (128 vs 256):
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_num_predict_128_vs_256_20260325_144910.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - phase set unchanged: `decode_signature_detected`
+  - shape hits unchanged: `192 -> 192`
+  - `tok_s_avg`: `49.8266 -> 48.6955` (delta `-1.1311`)
+  - `total_ms_avg`: `15059.612 -> 17869.656` (delta `+2810.044`)
+  - `rocblas_trace_gemm_avg`: unchanged (`1002`)
+- system lane:
+  - phase set unchanged: `unavailable`
+  - shape hits unchanged: `0 -> 0`
+  - dispatch/gemm averages remain 0
+
+Interpretation [inference]:
+
+- Lane separation is preserved under this one-knob control test.
+- For the current shape gate, increasing `NUM_PREDICT` does not change the
+  direct-observability signature, but it shifts runtime metrics.
