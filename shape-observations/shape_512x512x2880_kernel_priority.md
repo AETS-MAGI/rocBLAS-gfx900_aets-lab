@@ -19,7 +19,14 @@ Target shape pair:
   - `shape_512x1024x2880=288`
   - `direct/fallback/dispatch=1`
 - [main-node confirmed] stream window (both lanes):
-  - `decode_signature_detected` (3/3 rows)
+  - `decode_signature_detected` (latest refresh: 5/5 rows)
+
+Refresh note (2026-03-25 09 JST):
+
+- [main-node confirmed] lane summary:
+  - baseline: `direct_hits=1/1`, `shape_512_512_2880=192`
+  - side: `direct_hits=1/1`, `shape_512_1024_2880=288`
+  - split proxy stays `prefill_dominant_signature` in both lanes (`decode_delta_gemm_lines=0`)
 
 ## 3. Candidate priority (lane-level shared set)
 
@@ -59,5 +66,12 @@ flowchart LR
 - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260325_022435.txt`
 - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260325_022802.txt`
 - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260325_022953.txt`
+- `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260325_090936.txt`
+- `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_gptoss_anchor_shape_sweep_gpt-oss_latest_20260325_091016.txt`
+- `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260325_091108.txt`
+- `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260325_091604.txt`
+- `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_prefill_decode_split_gpt-oss_latest_20260325_092315.txt`
+- `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_prefill_decode_split_gpt-oss_latest_20260325_092419.txt`
+- `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_anchor_lane_status_gpt-oss_latest_20260325_092620.txt`
 - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_022545__rocprofv3_summary_gpt-oss_latest_20260325_022614_20260325_023311.tsv`
 - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/hsaco_candidate_map_kernel_candidates_rocprofv3_summary_gpt-oss_latest_20260325_022545__rocprofv3_summary_gpt-oss_latest_20260325_022614_20260325_023311_20260325_023331.tsv`
