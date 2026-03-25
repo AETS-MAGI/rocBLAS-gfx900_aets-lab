@@ -1562,3 +1562,48 @@ Interpretation [inference]:
 - This supports keeping `NUM_CTX=8192` as baseline and `12288` as side profile
   with equivalent path identity at the current observation layer.
 
+## 42. Single-knob control test (`num_thread: 6 -> 7`) (2026-03-26 04 JST)
+
+Scope:
+
+- keep one-shape gate fixed (`512x512x2880`)
+- keep one-point lane split fixed (libpath only)
+- change exactly one runtime knob: `NUM_THREAD`
+- keep `NUM_PREDICT=128`, `NUM_CTX=8192`, `KEEP_ALIVE=5m` fixed
+
+Executed [main-node confirmed]:
+
+- nt6c run root:
+  - `k1_entry_20260326_1shape_nt6c` (+ rerun1, rerun2)
+- nt7 run root:
+  - `k1_entry_20260326_1shape_nt7` (+ rerun1, rerun2)
+- repeat summaries:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_nt6c_20260326_045050.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_repeat_summary_k1_entry_20260326_1shape_nt7_20260326_045051.tsv`
+- control compare:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_k1_single_shape_control_compare_num_thread_6_vs_7_20260326_0452.tsv`
+
+Observed [main-node confirmed]:
+
+- AETS lane:
+  - observability class unchanged:
+    - phase `decode_signature_detected`
+    - `shape_hits=192`
+    - `fallback/dispatch/direct=1/1/1`
+    - `rocblas_trace_gemm_avg=1002`
+  - metric deltas:
+    - `ttft_ms_avg`: `12415.173 -> 11449.840` (delta `-965.333`)
+    - `total_ms_avg`: `15064.971 -> 14090.656` (delta `-974.315`)
+    - `tok_s_avg`: `49.6869 -> 49.8529` (delta `+0.1660`)
+  - `kernel_dispatch_avg` rose (`23919.667 -> 45478.667`) with a single-run outlier
+    (`nt7_rerun1 kernel_dispatch_rows=88998`)
+- system lane:
+  - `unavailable` / `shape_hits=0` / `dispatch=0` / `gemm=0` unchanged
+
+Interpretation [inference]:
+
+- `NUM_THREAD=7` keeps direct-observability class unchanged and improves AETS
+  runtime metrics in this anchor.
+- Treat kernel-dispatch-row jump as an outlier-sensitive metric in this run set;
+  do not infer path change from that field alone.
+
