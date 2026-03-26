@@ -1607,3 +1607,97 @@ Interpretation [inference]:
 - Treat kernel-dispatch-row jump as an outlier-sensitive metric in this run set;
   do not infer path change from that field alone.
 
+## 43. Workload visibility matrix (`C12`, model-only delta) (2026-03-26 08 JST)
+
+Scope:
+
+- keep anchor knobs fixed:
+  - `NUM_BATCH=512`, `NUM_CTX=8192`, `NUM_THREAD=6`
+  - `NUM_PREDICT=128`, `KEEP_ALIVE=5m`, `ROCBLAS_LAYER=9`
+  - `prompt_profile=short`
+- vary model only:
+  - `gpt-oss:latest`, `tinyllama:latest`, `qwen2.5:7b`, `deepseek-r1:14b`
+- no source edits, no low-layer patching
+
+Executed [main-node confirmed]:
+
+- sweep:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_workload_path_sweep_20260326_081421.txt`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_workload_path_sweep_20260326_081421.tsv`
+- matrix:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_c12_workload_visibility_matrix_20260326_081421.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_c12_workload_visibility_matrix_20260326_081421.txt`
+
+Observed [main-node confirmed]:
+
+- case counts:
+  - `ok_cases=4`
+  - `direct_cases=1`
+  - `indirect_cases=3`
+  - `insufficient_cases=0`
+- per model:
+  - `gpt-oss:latest`: `direct=1`, `fallback=1`, `dispatch=1`, `rocblas_trace_gemm_lines=1002`
+  - `tinyllama/qwen/deepseek`: `direct=0`, `fallback=1`, `dispatch=1`, `rocblas_trace_gemm_lines=0`
+  - all non-gpt-oss rows are `link_status=indirect_link_only_same_scenario`
+
+Interpretation [inference]:
+
+- Under this anchor, direct rocBLAS/Tensile visibility remains workload-dependent.
+- This result strengthens the current two-track workflow:
+  - `gpt-oss` as direct-observability anchor
+  - GGUF-family workloads as indirect/regression lane
+- No kernel-level 1:1 causality is inferred from this matrix.
+
+## 44. Catalog-read vs dispatch correlation (`C13`, phase-window anchored) (2026-03-26 14 JST)
+
+Scope:
+
+- quantify correlation level between catalog-read evidence and dispatch evidence
+  without adding kernel-causality claims
+- keep same anchor as C12 except `NUM_PREDICT` sweep:
+  - `NUM_BATCH=512`, `NUM_CTX=8192`, `NUM_THREAD=6`
+  - `KEEP_ALIVE=5m`, `ROCBLAS_LAYER=9`
+  - `NUM_PREDICT={64,128,256}`
+- models:
+  - `gpt-oss:latest`, `tinyllama:latest`, `qwen2.5:7b`, `deepseek-r1:14b`
+
+Executed [main-node confirmed]:
+
+- source sweeps:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_gpt-oss_latest_20260326_135538.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_tinyllama_latest_20260326_135836.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_qwen2.5_7b_20260326_135932.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_stream_phase_window_sweep_deepseek-r1_14b_20260326_140047.tsv`
+- C13 correlation table:
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_c13_catalog_dispatch_phase_correlation_20260326_140431.tsv`
+  - `/home/limonene/ROCm-project/vega_path_check_logs_raw/summaries/g4_c13_catalog_dispatch_phase_correlation_20260326_140431.txt`
+
+Observed [main-node confirmed]:
+
+- counts:
+  - `total_rows=12`
+  - `decode_signature_rows=3`
+  - `prefill_dominant_rows=9`
+  - `direct_rows=3`
+  - `indirect_rows=9`
+- joint class counts:
+  - `catalog_and_dispatch_observed_direct_visible=3`
+  - `catalog_and_dispatch_observed_indirect_only=9`
+- `gpt-oss` rows:
+  - `fallback_dat/hsaco=57/57`, `rocblas_trace_gemm_lines=1002`
+  - `phase=decode_signature_detected`, `direct=1`
+- GGUF-family rows:
+  - `fallback_dat/hsaco=54/54`, `rocblas_trace_gemm_lines=0`
+  - `phase=prefill_dominant_signature`, `direct=0`
+- `kernel_dispatch_rows` remains non-zero in both groups:
+  - direct range: `21376..25223`
+  - indirect range: `24123..59611`
+
+Interpretation [inference]:
+
+- In this C13 scope, catalog-read and dispatch co-occur across workloads,
+  while direct visibility and phase signature remain workload-dependent.
+- This supports using:
+  - `gpt-oss` for direct-observability anchor checks
+  - GGUF-family lanes for indirect/fallback continuity checks
+- Do not collapse this correlation into strict catalog-item -> kernel 1:1 causality.
